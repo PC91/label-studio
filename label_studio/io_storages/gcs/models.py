@@ -44,6 +44,9 @@ class GCSStorageMixin(models.Model):
     google_application_credentials = models.TextField(
         _('google_application_credentials'), null=True, blank=True,
         help_text='The content of GOOGLE_APPLICATION_CREDENTIALS json file')
+    google_project_id = models.TextField(
+        _('Google Project ID'), null=True, blank=True,
+        help_text='Google project ID')
 
     def get_client(self, raise_on_error=False):
         credentials = None
@@ -64,6 +67,10 @@ class GCSStorageMixin(models.Model):
                 logger.error(f"Can't create GCS credentials", exc_info=True)
                 credentials = None
                 project_id = _marker
+
+        if self.google_project_id:
+            # User-defined project ID should override anything that comes from Service Account / environmental vars
+            project_id = self.google_project_id
 
         client = google_storage.Client(project=project_id, credentials=credentials)
         if credentials is not None:
@@ -121,12 +128,15 @@ class GCSImportStorage(GCSStorageMixin, ImportStorage):
 
     @classmethod
     def is_gce_instance(cls):
-        """Check if it's GCE instance via DNS lookup to metadata server"""
+        """Check if it's GCE instance via ping to metadata server"""
+        s = socket.socket()
         try:
-            socket.getaddrinfo('metadata.google.internal', 80)
-        except socket.gaierror:
+            s.connect(('metadata.google.internal', 80))
+            return True
+        except Exception:
             return False
-        return True
+        finally:
+            s.close()
 
     def generate_http_url(self, url):
         r = urlparse(url, allow_fragments=False)
