@@ -102,6 +102,12 @@
         "decorators": ""
     },
     {
+        "url": "/projects/<int:pk>/duplication/",
+        "module": "projects.views.project_duplication",
+        "name": "projects:project-duplication",
+        "decorators": ""
+    },
+    {
         "url": "/projects/<int:pk>/settings/<sub_path>",
         "module": "projects.views.project_settings",
         "name": "projects:project-settings-anything",

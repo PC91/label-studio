@@ -17,6 +17,8 @@ from core.utils.common import get_organization_from_request
 
 from organizations.models import Organization
 
+from . import helper
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,6 +30,12 @@ def project_list(request):
 @login_required
 def project_settings(request, pk, sub_path):
     return render(request, 'projects/settings.html')
+
+
+@login_required
+def project_duplication(request, pk):
+    helper.duplicate_project(project_id=pk)
+    return render(request, 'projects/duplication.html')
 
 
 def playground_replacements(request, task_data):

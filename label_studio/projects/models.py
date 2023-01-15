@@ -14,7 +14,7 @@ from annoying.fields import AutoOneToOneField
 from data_manager.managers import TaskQuerySet
 from projects.functions.utils import make_queryset_from_iterable
 from tasks.models import Task, Prediction, Annotation, Q_task_finished_annotations, bulk_update_stats_project_tasks
-from core.utils.common import create_hash, get_attr_or_item, load_func
+from core.utils.common import create_hash, get_attr_or_item, load_func, retry_database_locked
 from core.utils.exceptions import LabelStudioValidationErrorSentryIgnored
 from core.label_config import (
     validate_label_config,
@@ -242,6 +242,78 @@ class Project(ProjectMixin, models.Model):
         if self.label_config is not None:
             if self.data_types != extract_data_types(self.label_config):
                 self.data_types = extract_data_types(self.label_config)
+
+    @retry_database_locked()
+    def duplicate_media_tasks_to_new_project(self, duplicated_project):
+        lst_tasks_to_duplicate = list(self.tasks.all()).copy()
+        db_tasks = []
+        with transaction.atomic():
+            tasks = Task.objects.filter(project=duplicated_project)
+            prev_inner_id = tasks.order_by("-inner_id")[0].inner_id if tasks else 0
+            max_inner_id = (prev_inner_id + 1) if prev_inner_id else 1
+            count = 0
+            for task in reversed(lst_tasks_to_duplicate):
+                if (task.file_upload_id is not None):
+                    t = Task(
+                        project=duplicated_project,
+                        data=task.data,
+                        meta=task.meta,
+                        is_labeled=False,
+                        file_upload_id=task.file_upload_id,
+                        inner_id=None if prev_inner_id is None else max_inner_id+count,
+                    )
+                    db_tasks.append(t)
+                    count += 1
+
+            if settings.DJANGO_DB == settings.DJANGO_DB_SQLITE:
+                try:
+                    last_task = Task.objects.latest('id')
+                    current_id = last_task.id + 1
+                except Task.DoesNotExist:
+                    current_id = 1
+
+                for task in db_tasks:
+                    task.id = current_id
+                    current_id += 1
+                Task.objects.bulk_create(
+                    db_tasks, batch_size=settings.BATCH_SIZE)
+            else:
+                Task.objects.bulk_create(
+                    db_tasks, batch_size=settings.BATCH_SIZE)
+        return 0
+
+    def duplicate_import_storages_to_new_project(self, duplicated_project):
+        from io_storages.models import get_storage_classes
+        for storage_class in get_storage_classes("import"):
+            storage_objects_to_duplicate = list(storage_class.objects.filter(project=self))
+            for storage_object in storage_objects_to_duplicate:
+                storage_object.pk = None
+                storage_object.project = duplicated_project
+                storage_object.save()
+        return 0
+
+    def duplicate(self):
+        # Basic attributes
+        duplicated_project = Project.objects.create(
+            title=self.title+" - Copy",
+            created_by=self.created_by,
+            organization=self.organization,
+            label_config=self.label_config,
+            sampling=self.sampling,
+            description=self.description,
+            color=self.color
+        )
+        duplicated_project.save()
+
+        # Storage objects
+        self.duplicate_import_storages_to_new_project(duplicated_project)
+
+        # Tasks (un-annotated) that are uploaded media files
+        self.duplicate_media_tasks_to_new_project(duplicated_project)
+
+        # Save the duplicated project
+        duplicated_project.save()
+        return 0
 
     @property
     def num_tasks(self):

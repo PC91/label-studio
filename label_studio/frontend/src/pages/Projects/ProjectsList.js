@@ -71,6 +71,7 @@ const ProjectCard = ({ project }) => {
                 <Menu>
                   <Menu.Item href={`/projects/${project.id}/settings`}>Settings</Menu.Item>
                   <Menu.Item href={`/projects/${project.id}/data?labeling=1`}>Label</Menu.Item>
+                  <Menu.Item href={`/projects/${project.id}/duplication`}>Duplicate</Menu.Item>
                 </Menu>
               )}>
                 <Button size="small" type="text" icon={<LsEllipsis/>}/>
