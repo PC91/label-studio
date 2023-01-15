@@ -21,6 +21,13 @@ export const GeneralSettings = () => {
     '#51AAFD',
     '#7F64FF',
     '#D55C9D',
+    '#730000',
+    '#990099',
+    '#00C9BB',
+    '#666600',
+    '#007300',
+    '#00007D',
+    '#483519',
   ];
 
   const samplings = [
