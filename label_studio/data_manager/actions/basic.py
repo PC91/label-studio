@@ -70,6 +70,40 @@ def delete_tasks(project, queryset, **kwargs):
     return {'processed_items': count, 'reload': reload,
             'detail': 'Deleted ' + str(count) + ' tasks'}
 
+def delete_my_tasks_annotations(project, queryset, **kwargs):
+    """ Delete annotations of connected user by tasks ids
+
+    :param project: project instance
+    :param queryset: filtered tasks db queryset
+    """
+    request = kwargs['request']
+    task_ids = queryset.values_list('id', flat=True)
+    annotations = Annotation.objects.filter(task__id__in=task_ids).filter(completed_by=request.user.id)
+    count = annotations.count()
+
+    # take only tasks where annotations were deleted
+    real_task_ids = set(list(annotations.values_list('task__id', flat=True)))
+    annotations_ids = list(annotations.values('id'))
+    # remove deleted annotations from project.summary
+    project.summary.remove_created_annotations_and_labels(annotations)
+    annotations.delete()
+    emit_webhooks_for_instance(project.organization, project, WebhookAction.ANNOTATIONS_DELETED, annotations_ids)
+    request = kwargs['request']
+
+    tasks = Task.objects.filter(id__in=real_task_ids)
+    tasks.update(updated_at=datetime.now(), updated_by=request.user)
+    # Update tasks counter and is_labeled. It should be a single operation as counters affect bulk is_labeled update
+    project.update_tasks_counters_and_is_labeled(tasks_queryset=real_task_ids)
+
+    # LSE postprocess
+    postprocess = load_func(settings.DELETE_TASKS_ANNOTATIONS_POSTPROCESS)
+    if postprocess is not None:
+        tasks = Task.objects.filter(id__in=task_ids)
+        postprocess(project, tasks, **kwargs)
+
+    return {'processed_items': count,
+            'detail': 'Deleted ' + str(count) + ' annotations'}
+
 
 def delete_tasks_annotations(project, queryset, **kwargs):
     """ Delete all annotations by tasks ids
@@ -155,10 +189,20 @@ actions = [
         }
     },
     {
+        'entry_point': delete_my_tasks_annotations,
+        'permission': all_permissions.tasks_delete,
+        'title': 'Delete My Annotations',
+        'order': 101,
+        'dialog': {
+            'text': 'You are going to delete your annotations from the selected tasks. Please confirm your action.',
+            'type': 'confirm'
+        }
+    },
+    {
         'entry_point': delete_tasks_annotations,
         'permission': all_permissions.tasks_delete,
-        'title': 'Delete Annotations',
-        'order': 101,
+        'title': 'Delete All Annotations',
+        'order': 102,
         'dialog': {
             'text': 'You are going to delete all annotations from the selected tasks. Please confirm your action.',
             'type': 'confirm'
@@ -168,7 +212,7 @@ actions = [
         'entry_point': delete_tasks_predictions,
         'permission': all_permissions.predictions_any,
         'title': 'Delete Predictions',
-        'order': 102,
+        'order': 103,
         'dialog': {
             'text': 'You are going to delete all predictions from the selected tasks. Please confirm your action.',
             'type': 'confirm'
