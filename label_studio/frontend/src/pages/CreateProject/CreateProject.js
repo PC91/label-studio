@@ -12,8 +12,31 @@ import { useImportPage } from './Import/useImportPage';
 import { useDraftProject } from './utils/useDraftProject';
 
 
-const ProjectName = ({ name, setName, onSaveName, onSubmit, error, description, setDescription, show = true }) => !show ? null :(
+
+const ProjectName = ({
+  name, setName,
+  selectedWorkspace, setSelectedWorkspace, lstWorkspaces,
+  onSaveName, onSubmit, error,
+  description, setDescription,
+  show = true
+}) => !show ? null :(
   <form className={cn("project-name")} onSubmit={e => { e.preventDefault(); onSubmit(); }}>
+    <div className="field field--wide ls-select">
+      <select
+        name="workspace"
+        id="project_workspace"
+        label="Workspace"
+        class="ls-select__list"
+        value={selectedWorkspace}
+        onChange={e => {
+          setSelectedWorkspace(e.target.value)
+        }}
+      >
+        {lstWorkspaces.map(workspace => (
+          <option value={workspace.id}>{workspace.title}</option>
+        ))}
+      </select>
+    </div>
     <div className="field field--wide">
       <label htmlFor="project_name">Project Name</label>
       <input name="name" id="project_name" value={name} onChange={e => setName(e.target.value)} onBlur={onSaveName} />
@@ -33,18 +56,29 @@ const ProjectName = ({ name, setName, onSaveName, onSubmit, error, description, 
   </form>
 );
 
-export const CreateProject = ({ onClose }) => {
+export const CreateProject = ({ onClose, activeWorkspace, setActiveWorkspace }) => {
   const [step, setStep] = React.useState("name"); // name | import | config
   const [waiting, setWaitingStatus] = React.useState(false);
-
-  const project = useDraftProject();
+  const project = useDraftProject(activeWorkspace);
   const history = useHistory();
   const api = useAPI();
 
   const [name, setName] = React.useState("");
+  // Set the active workspace ID as the first choice when a project is created
+  const [selectedWorkspace, setSelectedWorkspace] = React.useState(activeWorkspace);
+  const [lstWorkspaces, setLstWorkspaces] = React.useState([]);
   const [error, setError] = React.useState();
   const [description, setDescription] = React.useState("");
   const [config, setConfig] = React.useState("<View></View>");
+
+  const requestWorkspaceParams = {};
+  requestWorkspaceParams.include = ['id', 'title', 'color',].join(',');
+
+  api.callApi("workspaces", {
+    params: requestWorkspaceParams,
+  }).then(result => {
+    setLstWorkspaces(result.results);
+  })
 
   React.useEffect(() => { setError(null); }, [name]);
 
@@ -64,9 +98,10 @@ export const CreateProject = ({ onClose }) => {
 
   const projectBody = React.useMemo(() => ({
     title: name,
+    workspace: selectedWorkspace,
     description,
     label_config: config,
-  }), [name, description, config]);
+  }), [name, selectedWorkspace, description, config]);
 
   const onCreate = React.useCallback(async () => {
     const imported = await finishUpload();
@@ -83,6 +118,7 @@ export const CreateProject = ({ onClose }) => {
 
     if (response !== null) {
       history.push(`/projects/${response.id}/data`);
+      setActiveWorkspace(projectBody.workspace);
     }
   }, [project, projectBody, finishUpload]);
 
@@ -128,11 +164,14 @@ export const CreateProject = ({ onClose }) => {
         <ProjectName
           name={name}
           setName={setName}
-          error={error}
           onSaveName={onSaveName}
-          onSubmit={onCreate}
+          selectedWorkspace={selectedWorkspace} 
+          setSelectedWorkspace={setSelectedWorkspace}
+          lstWorkspaces={lstWorkspaces}
           description={description}
           setDescription={setDescription}
+          error={error}
+          onSubmit={onCreate}
           show={step === "name"}
         />
         <ImportPage project={project} show={step === "import"} {...pageProps} />

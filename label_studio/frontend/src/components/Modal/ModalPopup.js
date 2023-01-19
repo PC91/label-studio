@@ -6,6 +6,8 @@ import { BemWithSpecifiContext, cn } from '../../utils/bem';
 import { aroundTransition } from '../../utils/transition';
 import { Button } from '../Button/Button';
 import "./Modal.styl";
+import "./ModalNewWorkspace.styl";
+import "./ModalWorkspaceModification.styl";
 
 const {Block, Elem} = BemWithSpecifiContext();
 
@@ -94,7 +96,7 @@ export class Modal extends React.Component {
 
     const modalContent = (
       <ModalContext.Provider value={this}>
-        <Block name="modal" ref={this.modalRef} mod={mods} mix={mixes} onClick={this.onClickOutside}>
+        <Block name={this.props.name ?? "modal"} ref={this.modalRef} mod={mods} mix={mixes} onClick={this.onClickOutside}>
           <Elem name="wrapper">
             <Elem name="content" style={Object.assign({}, this.props.style, modalSizeStyle)}>
               {!bare && (

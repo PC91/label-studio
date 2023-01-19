@@ -15,7 +15,7 @@ export const ProjectsList = ({ projects, currentPage, totalItems, loadNextPage, 
           <ProjectCard key={project.id} project={project}/>
         ))}
       </Elem>
-      <Elem name="pages">
+      <Elem name="pages" style={{marginLeft: 0}}>
         <Pagination
           name="projects-list"
           label="Projects"
@@ -31,13 +31,12 @@ export const ProjectsList = ({ projects, currentPage, totalItems, loadNextPage, 
   );
 };
 
-export const EmptyProjectsList = ({ openModal }) => {
+export const EmptyProjectsList = ({ }) => {
   return (
     <Block name="empty-projects-page">
       <Elem name="heidi" tag="img" src={absoluteURL("/static/images/opossum_looking.png")} />
       <Elem name="header" tag="h1">Heidi doesn’t see any projects here</Elem>
       <p>Create one and start labeling your data</p>
-      <Elem name="action" tag={Button} onClick={openModal} look="primary">Create Project</Elem>
     </Block>
   );
 };

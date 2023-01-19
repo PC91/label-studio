@@ -35,6 +35,10 @@ class AllPermissions(BaseModel):
     labels_view = 'labels.view'
     labels_change = 'labels.change'
     labels_delete = 'labels.delete'
+    workspaces_create = 'workspaces.create'
+    workspaces_view = 'workspaces.view'
+    workspaces_change = 'workspaces.change'
+    workspaces_delete = 'workspaces.delete'
 
 
 

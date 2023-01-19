@@ -187,6 +187,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'django_rq',
     'django_filters',
+    'workspaces',
     'rules',
     'annoying',
     'rest_framework',
@@ -444,6 +445,8 @@ REACT_APP_ROOT = os.path.join(BASE_DIR, '../frontend/dist/react-app')
 
 # per project settings
 BATCH_SIZE = 1000
+WORKSPACE_TITLE_MIN_LEN = 3
+WORKSPACE_TITLE_MAX_LEN = 50
 PROJECT_TITLE_MIN_LEN = 3
 PROJECT_TITLE_MAX_LEN = 50
 LOGIN_REDIRECT_URL = '/'
@@ -481,6 +484,7 @@ DATA_MANAGER_ACTIONS = {}
 DATA_MANAGER_CUSTOM_FILTER_EXPRESSIONS = 'data_manager.functions.custom_filter_expressions'
 DATA_MANAGER_PREPROCESS_FILTER = 'data_manager.functions.preprocess_filter'
 USER_LOGIN_FORM = 'users.forms.LoginForm'
+WORKSPACE_MIXIN = 'workspaces.mixins.WorkspaceMixin'
 PROJECT_MIXIN = 'projects.mixins.ProjectMixin'
 TASK_MIXIN = 'tasks.mixins.TaskMixin'
 ANNOTATION_MIXIN = 'tasks.mixins.AnnotationMixin'
@@ -517,6 +521,7 @@ WEBHOOK_SERIALIZERS = {
     'annotation': 'webhooks.serializers_for_hooks.AnnotationWebhookSerializer',
     'label': 'labels_manager.serializers.LabelSerializer',
     'label_link': 'labels_manager.serializers.LabelLinkSerializer',
+    'workspace': 'webhooks.serializers_for_hooks.WorkspaceWebhookSerializer',
 }
 
 EDITOR_KEYMAP = json.dumps(get_env("EDITOR_KEYMAP"))

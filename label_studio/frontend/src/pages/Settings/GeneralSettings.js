@@ -2,14 +2,34 @@ import React, { useCallback, useContext } from 'react';
 import { Button } from '../../components';
 import { Form, Input, TextArea } from '../../components/Form';
 import { RadioGroup } from '../../components/Form/Elements/RadioGroup/RadioGroup';
+import { Select } from '../../components/Form/Elements';
+import { useAPI } from '../../providers/ApiProvider';
 import { ProjectContext } from '../../providers/ProjectProvider';
-import { Block } from '../../utils/bem';
+import { Block, Elem } from '../../utils/bem';
 
 export const GeneralSettings = () => {
+  const [lstWorkspaces, setLstWorkspaces] = React.useState([]);
+  const api = useAPI();
+  const requestWorkspaceParams = {};
+
+  requestWorkspaceParams.include = [
+    'id',
+    'title',
+    'color', 
+  ].join(',');
+
+  api.callApi("workspaces", {
+    params: requestWorkspaceParams,
+  }).then(result => {
+    setLstWorkspaces(result.results);
+  })
+
   const {project, fetchProject} = useContext(ProjectContext);
 
   const updateProject = useCallback(() => {
+
     if (project.id) fetchProject(project.id, true);
+
   }, [project]);
 
   const colors = [
@@ -44,6 +64,16 @@ export const GeneralSettings = () => {
         onSubmit={updateProject}
       >
         <Form.Row columnCount={1} rowGap="32px">
+          <Select
+            name="workspace"
+            label="Workspace"
+            disabled={false}
+            value={project.workspace}
+            options={lstWorkspaces.map(
+              workspace => ({label: workspace.title, value: workspace.id})
+            )}
+            labelProps={{large: true}}
+          />
           <Input
             name="title"
             label="Project Name"

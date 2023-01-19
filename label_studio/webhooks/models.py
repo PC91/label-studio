@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from projects.models import Project
+from workspaces.models import Workspace
 from tasks.models import Annotation, Task
 from labels_manager.models import LabelLink
 # from labels_manager.serializers import LabelLinkSerializer, LabelSerializer
@@ -111,6 +112,10 @@ class WebhookAction(models.Model):
     LABEL_LINK_CREATED = 'LABEL_LINK_CREATED'
     LABEL_LINK_UPDATED = 'LABEL_LINK_UPDATED'
     LABEL_LINK_DELETED = 'LABEL_LINK_DELETED'
+
+    WORKSPACE_CREATED = 'WORKSPACE_CREATED'
+    WORKSPACE_UPDATED = 'WORKSPACE_UPDATED'
+    WORKSPACE_DELETED = 'WORKSPACE_DELETED'
 
 
     ACTIONS = {
@@ -249,6 +254,33 @@ class WebhookAction(models.Model):
             'model': LabelLink,
             'serializer': OnlyIDWebhookSerializer,
             'project-field': 'project',
+        },
+        WORKSPACE_CREATED: {
+            'name': _('Workspace created'),
+            'description': _(''),
+            'key': 'workspace',
+            'many': False,
+            'model': Workspace,
+            'serializer': load_func(settings.WEBHOOK_SERIALIZERS['workspace']),
+            'organization-only': True,
+        },
+        WORKSPACE_UPDATED: {
+            'name': _('Workspace updated'),
+            'description': _(''),
+            'key': 'workspace',
+            'many': False,
+            'model': Workspace,
+            'serializer': load_func(settings.WEBHOOK_SERIALIZERS['workspace']),
+            'workspace-field': '__self__',
+        },
+        WORKSPACE_DELETED: {
+            'name': _('Workspace deleted'),
+            'description': _(''),
+            'key': 'workspace',
+            'many': False,
+            'model': Workspace,
+            'serializer': OnlyIDWebhookSerializer,
+            'organization-only': True,
         },
 
     }

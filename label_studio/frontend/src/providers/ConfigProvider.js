@@ -31,3 +31,26 @@ export const ConfigProvider = ({children}) => {
 export const useConfig = () => {
   return useContext(ConfigContext);
 };
+
+export const ActiveWorkspaceContext = createContext({
+  activeWorkspace: 1,
+  setActiveWorkspace: () => {}
+});
+
+export const ActiveWorkspaceProvider = ({children}) => {
+  const [activeWorkspace, setActiveWorkspace] = useState(1);
+
+  const contextValue = useMemo(() => (
+    { activeWorkspace, setActiveWorkspace }
+  ), [activeWorkspace]);
+
+  return (
+    <ActiveWorkspaceContext.Provider value={contextValue}>
+      {children}
+    </ActiveWorkspaceContext.Provider>
+  );
+};
+
+export const useActiveWorkspace = () => {
+  return useContext(ActiveWorkspaceContext);
+};

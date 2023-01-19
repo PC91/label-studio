@@ -203,6 +203,10 @@ class Project(ProjectMixin, models.Model):
     )
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)
+    
+    workspace = models.ForeignKey(
+        'workspaces.Workspace', related_name='projects', on_delete=models.CASCADE, null=True
+    )
 
     SEQUENCE = 'Sequential sampling'
     UNIFORM = 'Uniform sampling'
@@ -298,6 +302,7 @@ class Project(ProjectMixin, models.Model):
             title=self.title+" - Copy",
             created_by=self.created_by,
             organization=self.organization,
+            workspace=self.workspace,
             label_config=self.label_config,
             sampling=self.sampling,
             description=self.description,

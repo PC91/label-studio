@@ -12,10 +12,13 @@
 
   &__list
     padding 40px
-    display grid
-    grid-autoflow columns
+    display flex
+    flex-wrap wrap
+    justify-content space-around
+    flex-items margin-left
     box-sizing border-box
-    grid-gap 32px
+    grid-autoflow columns
+    grid-gap 32px 10px
     grid-auto-rows 1fr
     grid-template-columns repeat(4, 1fr)
 
@@ -37,6 +40,7 @@
     justify-content flex-end
     box-sizing border-box
     background-color #fafafa
+    margin 0px 0px 0px 240px
 
   @media (min-width 1200px)
     &__list

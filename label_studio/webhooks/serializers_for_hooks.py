@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from workspaces.models import Workspace
 from projects.models import Project
 from tasks.models import Task, Annotation
 from core.label_config import replace_task_data_undefined_with_config_field
@@ -49,4 +50,15 @@ class TaskWebhookSerializer(serializers.ModelSerializer):
 class AnnotationWebhookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Annotation
+        fields = '__all__'
+
+
+class WorkspaceWebhookSerializer(serializers.ModelSerializer):
+
+    def to_representation(self, instance):
+        instance = Workspace.objects.with_counts().filter(id=instance.id)[0]
+        return super().to_representation(instance)
+
+    class Meta:
+        model = Workspace
         fields = '__all__'

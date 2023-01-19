@@ -23,6 +23,7 @@ from django.http import Http404
 
 from core.utils.common import temporary_disconnect_all_signals
 from core.label_config import config_essential_data_has_changed
+from workspaces.models import Workspace
 from projects.models import (
     Project, ProjectSummary, ProjectManager
 )
@@ -153,7 +154,9 @@ class ProjectListAPI(generics.ListCreateAPIView):
 
     def perform_create(self, ser):
         try:
-            project = ser.save(organization=self.request.user.active_organization)
+            workspace = self.request.data.get('workspace')
+            workspace = generics.get_object_or_404(Workspace.objects, pk=workspace)
+            project = ser.save(organization=self.request.user.active_organization, workspace=workspace)
         except IntegrityError as e:
             if str(e) == 'UNIQUE constraint failed: project.title, project.created_by_id':
                 raise ProjectExistException('Project with the same name already exists: {}'.

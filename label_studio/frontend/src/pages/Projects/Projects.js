@@ -7,6 +7,7 @@ import { Spinner } from '../../components/Spinner/Spinner';
 import { ApiContext } from '../../providers/ApiProvider';
 import { useContextProps } from '../../providers/RoutesProvider';
 import { useAbortController } from "../../hooks/useAbortController";
+import { useActiveWorkspace } from '../../providers/ConfigProvider';
 import { Block, Elem } from '../../utils/bem';
 import { FF_DEV_2575, isFF } from '../../utils/feature-flags';
 import { CreateProject } from '../CreateProject/CreateProject';
@@ -14,6 +15,9 @@ import { DataManagerPage } from '../DataManager/DataManager';
 import { SettingsPage } from '../Settings';
 import './Projects.styl';
 import { EmptyProjectsList, ProjectsList } from './ProjectsList';
+import { WorkspacesList } from '../Workspaces/WorkspacesList';
+import { CreateWorkspace } from '../CreateWorkspace/CreateWorkspace';
+import { WorkspaceSettings } from '../WorkspaceSettings/WorkspaceSettings'
 
 const getCurrentPage = () => {
   const pageNumberFromURL = new URLSearchParams(location.search).get("page");
@@ -24,16 +28,47 @@ const getCurrentPage = () => {
 export const ProjectsPage = () => {
   const api = React.useContext(ApiContext);
   const abortController = useAbortController();
+  const [workspacesList, setWorkspacesList] = React.useState([]);
   const [projectsList, setProjectsList] = React.useState([]);
   const [networkState, setNetworkState] = React.useState(null);
   const [currentPage, setCurrentPage] = useState(getCurrentPage());
   const [totalItems, setTotalItems] = useState(1);
   const setContextProps = useContextProps();
   const defaultPageSize = parseInt(localStorage.getItem('pages:projects-list') ?? 30);
+  const {activeWorkspace, setActiveWorkspace} = useActiveWorkspace();
+  const [projectModal, setProjectModal] = React.useState(false);
+  const openProjectModal = setProjectModal.bind(null, true);
+  const closeProjectModal = setProjectModal.bind(null, false);
 
-  const [modal, setModal] = React.useState(false);
-  const openModal = setModal.bind(null, true);
-  const closeModal = setModal.bind(null, false);
+  const [workspaceSettingsModal, setWorkspaceSettingsModal] = React.useState(false);
+  const openWorkspaceSettingsModal = setWorkspaceSettingsModal.bind(null, true);
+  const closeWorkspaceSettingsModal = setWorkspaceSettingsModal.bind(null, false);
+
+  const handlerToFetchProjectsInWorkspace = async (workspaceId) => {
+    setActiveWorkspace(workspaceId);
+  };
+
+  const handlerToFetchWorkspaces = async () => { await fetchWorkspaces(); };
+
+  const [workspaceModal, setworkspaceModal] = React.useState(false);
+  const openWorkspaceModal = setworkspaceModal.bind(null, true);
+  const closeWorkspaceModal = setworkspaceModal.bind(null, false);
+
+  const fetchWorkspaces = async () => {
+    const requestWorkspaceParams = {};
+
+    requestWorkspaceParams.include = [
+      'id',
+      'title',
+      'color', 
+    ].join(',');
+
+    const dataWorkspaces = await api.callApi("workspaces", {
+      params: requestWorkspaceParams,
+    });
+    const lstWorkspaces = dataWorkspaces.results?.sort((a, b) => (a.id > b.id) ? 1 : -1);
+    setWorkspacesList(lstWorkspaces ?? []);
+  }
 
   const fetchProjects = async (page  = currentPage, pageSize = defaultPageSize) => {
     setNetworkState('loading');
@@ -50,6 +85,7 @@ export const ProjectsPage = () => {
         'color', 
         'is_published', 
         'assignment_settings', 
+        'workspace'
       ].join(',');
     }
 
@@ -60,14 +96,16 @@ export const ProjectsPage = () => {
         errorFilter: (e) => e.error.includes('aborted'), 
       } : null),
     });
-
+    const lstProjects = data.results.filter(
+      project => (project.workspace == activeWorkspace)
+    );;
     setTotalItems(data?.count ?? 1);
-    setProjectsList(data.results ?? []);
+    setProjectsList(lstProjects ?? []);
     setNetworkState('loaded');
 
-    if (isFF(FF_DEV_2575) && data?.results?.length) {
+    if (isFF(FF_DEV_2575) && lstProjects?.length) {
       const additionalData = await api.callApi("projects", {
-        params: { ids: data?.results?.map(({ id }) => id).join(',') },
+        params: { ids: lstProjects?.map(({ id }) => id).join(',') },
         signal: abortController.controller.current.signal,
         errorFilter: (e) => e.error.includes('aborted'), 
       });
@@ -84,37 +122,77 @@ export const ProjectsPage = () => {
   };
 
   React.useEffect(() => {
-    fetchProjects();
-  }, []);
+    setContextProps({
+      activeWorkspaceId: activeWorkspace,
+      openProjectModal,
+      openWorkspaceSettingsModal
+    })
+  }, [activeWorkspace, workspacesList]);
 
   React.useEffect(() => {
-    // there is a nice page with Create button when list is empty
-    // so don't show the context button in that case
-    setContextProps({ openModal, showButton: projectsList.length > 0 });
-  }, [projectsList.length]);
+    fetchProjects();
+  }, [activeWorkspace]);
+
+  React.useEffect(() => {
+    fetchWorkspaces();
+    setContextProps({
+      openProjectModal,
+      openWorkspaceSettingsModal
+    });
+  }, []);
 
   return (
-    <Block name="projects-page">
-      <Oneof value={networkState}>
-        <Elem name="loading" case="loading">
-          <Spinner size={64}/>
-        </Elem>
-        <Elem name="content" case="loaded">
-          {projectsList.length ? (
-            <ProjectsList
-              projects={projectsList}
-              currentPage={currentPage}
-              totalItems={totalItems}
-              loadNextPage={loadNextPage}
-              pageSize={defaultPageSize}
+    <>
+      <Block name="workspaces-page">
+        <Oneof value={networkState}>
+          <Elem name="content" case="loaded">
+            <WorkspacesList
+              workspaces={workspacesList}
+              handlerToFetchProjectsInWorkspace={handlerToFetchProjectsInWorkspace}
+              openWorkspaceModal={openWorkspaceModal}
+              activeWorkspace={activeWorkspace}
             />
-          ) : (
-            <EmptyProjectsList openModal={openModal} />
-          )}
-          {modal && <CreateProject onClose={closeModal} />}
-        </Elem>
-      </Oneof>
-    </Block>
+          </Elem>
+        </Oneof>
+      </Block>
+      <Block name="projects-page" style={{marginLeft: 240}}>
+        <Oneof value={networkState}>
+          <Elem name="loading" case="loading">
+            <Spinner size={64}/>
+          </Elem>
+          <Elem name="content" case="loaded">
+            {projectsList.length ? (
+              <ProjectsList
+                projects={projectsList}
+                currentPage={currentPage}
+                totalItems={totalItems}
+                loadNextPage={loadNextPage}
+                pageSize={defaultPageSize}
+              />
+            ) : (
+              <EmptyProjectsList/>
+            )}
+            {projectModal &&
+              <CreateProject
+                onClose={closeProjectModal}
+                activeWorkspace={activeWorkspace}
+                setActiveWorkspace={setActiveWorkspace}/>}
+            {workspaceModal &&
+              <CreateWorkspace
+                onClose={closeWorkspaceModal}
+                handlerToFetchWorkspaces={handlerToFetchWorkspaces}/>}
+            {workspaceSettingsModal &&
+              <WorkspaceSettings
+                onClose={closeWorkspaceSettingsModal}
+                handlerToFetchWorkspaces={handlerToFetchWorkspaces}
+                projects={projectsList}
+                workspace={workspacesList.filter(
+                  workspace => (workspace.id == activeWorkspace)
+                )[0]}/>}
+          </Elem>
+        </Oneof>
+      </Block>
+    </>
   );
 };
 
@@ -137,7 +215,16 @@ ProjectsPage.routes = ({ store }) => [
     },
   },
 ];
-ProjectsPage.context = ({ openModal, showButton }) => {
-  if (!showButton) return null;
-  return <Button onClick={openModal} look="primary" size="compact">Create</Button>;
+ProjectsPage.context = ({
+    activeWorkspaceId,
+    openProjectModal,
+    openWorkspaceSettingsModal
+}) => {
+  return <div style={{display: "flex"}}>
+      {activeWorkspaceId != 1 &&
+        <Button onClick={openWorkspaceSettingsModal} look="primary" size="compact">Settings</Button>
+      }
+      <div style={{width: 10}}></div>
+      <Button onClick={openProjectModal} look="primary" size="compact">New Project</Button>
+  </div>;
 };

@@ -7,7 +7,7 @@ import { Router } from 'react-router-dom';
 import { initSentry } from "../config/Sentry";
 import { ApiProvider } from '../providers/ApiProvider';
 import { AppStoreProvider } from '../providers/AppStoreProvider';
-import { ConfigProvider } from '../providers/ConfigProvider';
+import { ConfigProvider, ActiveWorkspaceProvider } from '../providers/ConfigProvider';
 import { LibraryProvider } from '../providers/LibraryProvider';
 import { MultiProvider } from '../providers/MultiProvider';
 import { ProjectProvider } from '../providers/ProjectProvider';
@@ -51,6 +51,7 @@ const App = ({content}) => {
           <LibraryProvider key="lsf" libraries={libraries}/>,
           <RoutesProvider key="rotes"/>,
           <ProjectProvider key="project"/>,
+          <ActiveWorkspaceProvider key="active-workspace"/>,
         ]}>
           <AsyncPage>
             <RootPage content={content}/>

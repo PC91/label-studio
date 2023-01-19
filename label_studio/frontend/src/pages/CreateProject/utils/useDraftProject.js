@@ -1,11 +1,12 @@
 import React from 'react';
 import { useAPI } from '../../../providers/ApiProvider';
+import { useActiveWorkspace } from '../../../providers/ConfigProvider';
 
-export const useDraftProject = () => {
+export const useDraftProject = (activeWorkspace) => {
   const api = useAPI();
   const [project, setProject] = React.useState();
 
-  const fetchDraftProject = React.useCallback(async () => {
+  const fetchDraftProject = React.useCallback(async (activeWorkspace) => {
     const response = await api.callApi('projects');
 
     // always create the new one
@@ -23,6 +24,7 @@ export const useDraftProject = () => {
     const draft = await api.callApi('createProject', {
       body: {
         title: projectName,
+        workspace: activeWorkspace
       },
     });
 
@@ -30,7 +32,7 @@ export const useDraftProject = () => {
   }, []);
 
   React.useEffect(() => {
-    fetchDraftProject();
+    fetchDraftProject(activeWorkspace);
   }, []);
 
   return project;
