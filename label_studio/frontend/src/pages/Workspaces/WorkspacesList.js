@@ -4,8 +4,7 @@ import { cn } from '../../utils/bem';
 import { IconFolder } from '../../assets/icons';
 
 export const WorkspacesList = ({
-    workspaces, openWorkspaceModal,
-    handlerToFetchProjectsInWorkspace, activeWorkspace
+    workspaces, activeWorkspace, setActiveWorkspace, openWorkspaceModal
 }) => {
   const sidebarClass = cn('sidebar');
   return (
@@ -22,9 +21,9 @@ export const WorkspacesList = ({
             style={{marginBottom: 8}}>New Workspace</Button>
           {workspaces.map(workspace => (
             <WorkspaceCard
-              handler={handlerToFetchProjectsInWorkspace}
               workspace={workspace}
-              activeWorkspace={activeWorkspace}/>
+              activeWorkspace={activeWorkspace}
+              setActiveWorkspace={setActiveWorkspace}/>
           ))}
         </Menu>
       </div>
@@ -32,7 +31,7 @@ export const WorkspacesList = ({
   );
 };
 
-const WorkspaceCard = ({ handler, workspace, activeWorkspace }) => {
+const WorkspaceCard = ({ workspace, activeWorkspace, setActiveWorkspace }) => {
   return (
     <Menu.Item
       key={`workspace-${workspace.id}`}
@@ -41,7 +40,7 @@ const WorkspaceCard = ({ handler, workspace, activeWorkspace }) => {
       data-external
       exact
       active={workspace.id==activeWorkspace}
-      onClick={async () => {await handler(workspace.id)}}
+      onClick={() => {setActiveWorkspace(workspace.id)}}
     />
   );
 };

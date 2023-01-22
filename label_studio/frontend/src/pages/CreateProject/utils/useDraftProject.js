@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAPI } from '../../../providers/ApiProvider';
-import { useActiveWorkspace } from '../../../providers/ConfigProvider';
 
 export const useDraftProject = (activeWorkspace) => {
   const api = useAPI();

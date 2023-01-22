@@ -44,12 +44,6 @@ export const ProjectsPage = () => {
   const openWorkspaceSettingsModal = setWorkspaceSettingsModal.bind(null, true);
   const closeWorkspaceSettingsModal = setWorkspaceSettingsModal.bind(null, false);
 
-  const handlerToFetchProjectsInWorkspace = async (workspaceId) => {
-    setActiveWorkspace(workspaceId);
-  };
-
-  const handlerToFetchWorkspaces = async () => { await fetchWorkspaces(); };
-
   const [workspaceModal, setworkspaceModal] = React.useState(false);
   const openWorkspaceModal = setworkspaceModal.bind(null, true);
   const closeWorkspaceModal = setworkspaceModal.bind(null, false);
@@ -148,9 +142,9 @@ export const ProjectsPage = () => {
           <Elem name="content" case="loaded">
             <WorkspacesList
               workspaces={workspacesList}
-              handlerToFetchProjectsInWorkspace={handlerToFetchProjectsInWorkspace}
-              openWorkspaceModal={openWorkspaceModal}
               activeWorkspace={activeWorkspace}
+              setActiveWorkspace={setActiveWorkspace}
+              openWorkspaceModal={openWorkspaceModal}
             />
           </Elem>
         </Oneof>
@@ -174,21 +168,23 @@ export const ProjectsPage = () => {
             )}
             {projectModal &&
               <CreateProject
-                onClose={closeProjectModal}
                 activeWorkspace={activeWorkspace}
-                setActiveWorkspace={setActiveWorkspace}/>}
+                setActiveWorkspace={setActiveWorkspace}
+                onClose={closeProjectModal}/>}
             {workspaceModal &&
               <CreateWorkspace
-                onClose={closeWorkspaceModal}
-                handlerToFetchWorkspaces={handlerToFetchWorkspaces}/>}
+                setActiveWorkspace={setActiveWorkspace}
+                fetchWorkspaces={fetchWorkspaces}
+                onClose={closeWorkspaceModal}/>}
             {workspaceSettingsModal &&
               <WorkspaceSettings
-                onClose={closeWorkspaceSettingsModal}
-                handlerToFetchWorkspaces={handlerToFetchWorkspaces}
-                projects={projectsList}
-                workspace={workspacesList.filter(
+                activeWorkspaceBody={workspacesList.filter(
                   workspace => (workspace.id == activeWorkspace)
-                )[0]}/>}
+                )[0]}
+                setActiveWorkspace={setActiveWorkspace}
+                fetchWorkspaces={fetchWorkspaces}
+                projects={projectsList}
+                onClose={closeWorkspaceSettingsModal}/>}
           </Elem>
         </Oneof>
       </Block>

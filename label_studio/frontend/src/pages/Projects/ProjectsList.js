@@ -15,7 +15,7 @@ export const ProjectsList = ({ projects, currentPage, totalItems, loadNextPage, 
           <ProjectCard key={project.id} project={project}/>
         ))}
       </Elem>
-      <Elem name="pages" style={{marginLeft: 0}}>
+      <Elem name="pages">
         <Pagination
           name="projects-list"
           label="Projects"

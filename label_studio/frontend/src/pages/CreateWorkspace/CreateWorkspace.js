@@ -26,7 +26,9 @@ const WorkspaceName = ({
   </form>
 );
 
-export const CreateWorkspace = ({ onClose , handlerToFetchWorkspaces}) => {
+export const CreateWorkspace = ({
+     setActiveWorkspace, fetchWorkspaces, onClose
+}) => {
   const [step, setStep] = React.useState("name"); // name | import | config
   const [waiting, setWaitingStatus] = React.useState(false);
 
@@ -61,7 +63,8 @@ export const CreateWorkspace = ({ onClose , handlerToFetchWorkspaces}) => {
     setWaitingStatus(false);
 
     onClose?.();
-    await handlerToFetchWorkspaces();
+    await fetchWorkspaces();
+    await setActiveWorkspace(workspace.id);
   }, [workspace, workspaceBody]);
 
   const onSaveName = async () => {
@@ -89,7 +92,6 @@ export const CreateWorkspace = ({ onClose , handlerToFetchWorkspaces}) => {
     setWaitingStatus(false);
     history.replace("/projects");
     onClose?.();
-    await handlerToFetchWorkspaces();
   }, [workspace]);
 
   return (

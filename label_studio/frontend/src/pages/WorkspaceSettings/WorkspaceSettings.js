@@ -27,15 +27,15 @@ const WorkspaceName = ({
 );
 
 export const WorkspaceSettings = ({
-    workspace, projects,
-    onClose, handlerToFetchWorkspaces
+    activeWorkspaceBody, setActiveWorkspace, fetchWorkspaces,
+    projects, onClose
 }) => {
   const rootClass = cn("workspace-settings");
 
   const api = useContext(ApiContext);
   const history = useHistory();
   const [waiting, setWaitingStatus] = useState(false);
-  const [name, setName] = React.useState(workspace.title);
+  const [name, setName] = React.useState(activeWorkspaceBody.title);
   const [error, setError] = React.useState();
 
   React.useEffect(() => { setError(null); }, [name]);
@@ -48,7 +48,7 @@ export const WorkspaceSettings = ({
     if (error) return;
     const res = await api.callApi('updateWorkspace', {
       params: {
-        pk: workspace.id,
+        pk: activeWorkspaceBody.id,
       },
       body: {
         title: name,
@@ -56,8 +56,8 @@ export const WorkspaceSettings = ({
     });
     if (res.ok) return;
     onClose();
-    handlerToFetchWorkspaces();
-  }, [workspace, workspaceBody]);
+    fetchWorkspaces();
+  }, [activeWorkspaceBody, workspaceBody]);
 
   const onDelete = useCallback(() => {
     confirm({
@@ -69,16 +69,17 @@ export const WorkspaceSettings = ({
         setWaitingStatus(true);
         await api.callApi('deleteWorkspace', {
           params: {
-            pk: workspace.id,
+            pk: activeWorkspaceBody.id,
           },
         });
         history.replace('/projects');
         setWaitingStatus(false);
         onClose();
-        handlerToFetchWorkspaces();
+        setActiveWorkspace(1);
+        fetchWorkspaces();
       },
     });
-  }, [workspace]);
+  }, [activeWorkspaceBody]);
 
   return (
     <Modal

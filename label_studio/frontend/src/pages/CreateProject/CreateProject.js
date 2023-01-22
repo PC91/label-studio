@@ -56,7 +56,7 @@ const ProjectName = ({
   </form>
 );
 
-export const CreateProject = ({ onClose, activeWorkspace, setActiveWorkspace }) => {
+export const CreateProject = ({ activeWorkspace, setActiveWorkspace, onClose }) => {
   const [step, setStep] = React.useState("name"); // name | import | config
   const [waiting, setWaitingStatus] = React.useState(false);
   const project = useDraftProject(activeWorkspace);
